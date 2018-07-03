@@ -6,7 +6,8 @@ open System.Drawing.Imaging
 let patterns = [|"*.bmp";"*.gif";"*.png";"*.jpg"|]
 
 let bundle files outputName =
-    let dim = Seq.length files |> float |> sqrt
+    let length = Seq.length files
+    let dim = length |> float |> sqrt
     let cols, rows = ceil dim |> int, floor dim |> int
 
     let allImages = 
@@ -22,7 +23,8 @@ let bundle files outputName =
 
     let positions = 
         [0..cols-1] |> List.collect (fun c -> 
-        [0..rows-1] |> List.map (fun r ->
+        [0..rows-1] |> List.filter (fun r -> c + (r * cols) < length)
+                    |> List.map (fun r ->
             let x, y = c * cellWidth, r * cellHeight
             let image = allImages.[c + (r * cols)]
             let destRect = new Rectangle (x, y, cellWidth, cellHeight)
@@ -39,7 +41,7 @@ let bundle files outputName =
 
 [<EntryPoint>]
 let main argv =
-    let path = if Array.length argv > 0 then argv.[0] else "."
+    let path = if Array.length argv > 0 then argv.[0] else "c:\\dev\\Diablo Gifs\\"
     let files = patterns |> Array.collect (fun p -> Directory.GetFiles (path, p))
 
     if not <| Array.isEmpty files then bundle files "output" |> ignore
