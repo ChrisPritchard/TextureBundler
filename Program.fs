@@ -2,10 +2,11 @@
 open System
 open System.IO
 open System.Drawing
+open System.Drawing.Imaging
 
-let pattern = "*.bmp|*.gif|*.png"
+let patterns = [|"*.bmp";"*.gif";"*.png";"*.jpg"|]
 
-let bundle files =
+let bundle files outputName =
     let dim = Seq.length files |> float |> sqrt
     let cols, rows = ceil dim |> int, floor dim |> int
 
@@ -21,8 +22,8 @@ let bundle files =
     use graphics = Graphics.FromImage targetImage
 
     let positions = 
-        [0..cols] |> List.collect (fun c -> 
-        [0..rows] |> List.map (fun r ->
+        [0..cols-1] |> List.collect (fun c -> 
+        [0..rows-1] |> List.map (fun r ->
             let x, y = c * cellWidth, r * cellHeight
             let image = allImages.[c + (r * cols)]
             let destRect = new Rectangle (x, y, cellWidth, cellHeight)
@@ -31,20 +32,16 @@ let bundle files =
 
     let positionText = 
         positions 
-        |> List.map (fun (name, x, y) -> sprintf "%s,%i,%i\r\n" name x y)
+        |> List.map (fun (name, x, y) -> sprintf "%s,%i,%i" name x y)
         |> String.concat "\r\n"
-    
-    targetImage, positionText
+
+    targetImage.Save (sprintf "./%s.png" outputName, ImageFormat.Png) |> ignore
+    File.WriteAllText (sprintf "./%s.csv" outputName, positionText) |> ignore
 
 [<EntryPoint>]
 let main argv =
-    let path = if Array.length argv > 1 then argv.[1] else "."
-    let files = Directory.GetFiles (path, pattern)
+    let path = if Array.length argv > 0 then argv.[0] else "."
+    let files = patterns |> Array.collect (fun p -> Directory.GetFiles (path, p))
 
-    if not <| Array.isEmpty files then 
-        let image, info = bundle files
-        image.Save("./output.png") |> ignore
-        File.WriteAllText ("./output.txt", info) |> ignore
-        0
-    else    
-        -1
+    if not <| Array.isEmpty files then bundle files "output" |> ignore
+    0
