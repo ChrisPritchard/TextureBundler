@@ -1,5 +1,4 @@
 ﻿
-open System
 open System.IO
 open System.Drawing
 open System.Drawing.Imaging
