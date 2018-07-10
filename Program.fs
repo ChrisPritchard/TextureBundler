@@ -6,7 +6,7 @@ open System.Drawing.Imaging
 
 let patterns = [|"*.bmp";"*.gif";"*.png";"*.jpg"|]
 
-let bundle files outputName =
+let bundle files outputPath =
     let length = Seq.length files
     let dim = length |> float |> sqrt
     let cols, rows = ceil dim |> int, floor dim |> int
@@ -23,9 +23,9 @@ let bundle files outputName =
     use graphics = Graphics.FromImage targetImage
 
     let positions = 
-        [0..cols-1] |> List.collect (fun c -> 
-        [0..rows-1] |> List.filter (fun r -> c + (r * cols) < length)
-                    |> List.map (fun r ->
+        [0..rows-1] |> List.collect (fun r -> 
+        [0..cols-1] |> List.filter (fun c -> c + (r * cols) < length)
+                    |> List.map (fun c ->
             let x, y = c * cellWidth, r * cellHeight
             let imageInfo = allImages.[c + (r * cols)]
             let image = snd imageInfo
@@ -39,19 +39,23 @@ let bundle files outputName =
                 |> List.map (fun (name, x, y, w, h) -> sprintf "%s,%i,%i,%i,%i" name x y w h)
                 |> String.concat "\r\n")
 
-    targetImage.Save (sprintf "./%s.png" outputName, ImageFormat.Png) |> ignore
-    File.WriteAllText (sprintf "./%s.csv" outputName, positionText) |> ignore
+    targetImage.Save ((Path.Combine(outputPath, "./output.png")), ImageFormat.Png) |> ignore
+    File.WriteAllText ((Path.Combine(outputPath, "./output.csv")), positionText) |> ignore
 
 [<EntryPoint>]
 let main argv =
-    let path = if Array.length argv > 0 then argv.[0] else "./"
+    let (path, out) =
+        match argv with
+        | [|inPath|] -> inPath,"./"
+        | [|inPath;outPath|] -> inPath,outPath
+        | _ -> "./","./"
     if Directory.Exists path |> not then
         printfn "Directory not found"
         -1
     else
-        let files = patterns |> Array.collect (fun p -> Directory.GetFiles (path, p))
+        let files = patterns |> Array.collect (fun p -> Directory.GetFiles (path, p)) |> Array.sort
         if not <| Array.isEmpty files then 
-            bundle files "output"
+            bundle files out
             printfn "Done"
             0
         else
