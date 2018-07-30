@@ -7,7 +7,7 @@ let patterns = [|"*.bmp";"*.gif";"*.png";"*.jpg"|]
 let bundle files outputPath =
     let length = Seq.length files
     let dim = length |> float |> sqrt
-    let cols, rows = ceil dim |> int, floor dim |> int
+    let cols, rows = ceil dim |> int, ceil dim |> int
 
     let allImages = 
         files |> Seq.map (fun (p: string) -> 
